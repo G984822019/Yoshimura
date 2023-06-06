@@ -1,0 +1,19 @@
+1．パッケージの内容
+
+	ReadMe		このファイル
+	entry.cls	審査登録用pLaTeXクラスファイル
+	entry.bst	審査登録用jBiBTeXスタイルファイル
+	newenum.sty	enumerateの書式変更用スタイルファイル
+	sample.txt	pLaTeXのサンプル
+	sample.bib	jBiBTeX用データベースのサンプル
+	acc_hachioji.eps	図のサンプル
+
+2. コンパイル方法
+
+   platex sample
+   jbibtex sample
+   platex sample
+   platex sample
+
+   あとは，できたdviファイルを表示
+
