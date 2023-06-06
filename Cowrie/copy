@@ -1,0 +1,1 @@
+scp -r -P 12222 pi@133.36.50.6:/srv/cowrie/var/log/cowrie $HOME/Documents/ハニーポット/Yoshimura/cowrie
