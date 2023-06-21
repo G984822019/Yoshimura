@@ -3,6 +3,8 @@
 \LoadClass[twocolumn]{jsarticle}
 \RequirePackage{newenum}
 \RequirePackage[dvipdfmx]{graphicx}
+\RequirePackage[dvipdfmx]{xcolor}
+\RequirePackage{ulem}
 
 \def\author#1#2{\def\@author{#1 #2}}
 \def\supervisor#1#2{%
@@ -110,4 +112,7 @@
 \setlength\textheight{252mm}
 \setlength\itemsep{0mm}
 \setlength\parsep{0mm}
+
+\newenvironment{Com}{\color{red}}{\color{black}}
+\def\Repl#1#2{\sout{#1} \color{red}#2\color{black}}
 
