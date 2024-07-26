@@ -11,6 +11,7 @@
 
 \begin{document}
 \maketitle
+\listoffigures
 
 \chapter{はじめに}
 %\subsection{研究背景}
@@ -174,12 +175,15 @@ Rassberry Piのファイアウォールの設定からSSHを有効にする事�
 Dshieldのプログラム
 を調査し，
 コマンドを収集できているのか確認した．
-まず初めに，Cowrieは，攻撃者からのコマンドをどう対処しているのかを調べ，t攻撃者に返すコマンドのディレクトリとしてextcomsファイルがあることが分かった．次に，このファイルを使っているものを次のコマンドで検索し，
-\verb!find. -exec grep, textcmds {}\; -and -print 2 > /dev/null!
-srv/cowrie/shell/protocol.pyで使われていることが分かった．
+まず初めに，Cowrieは，攻撃者からのコマンドをどう対処しているのかを調べ，攻撃者に返すコマンドのディレクトリとしてtxtcomsファイルがあることが分かった．次に，このファイルを使っているものを次のコマンドで検索し，
+\verb!find. -exec grep, 'textcmds' {}\; -and -print 2>/dev/null!
+rv/cowrie/shell/protocol.pyで使われていることが分かった．また，protocol.py内には，getCommand関数があり，この関数はhoneypot.pyでも使われていた.
+%srv/cowrie/shell/honeypot.pyで使われていることが分かった．このファイルのLineRacived()関数では，攻撃者が入力された行の処理を行い，その関数内のrunCommand()内のprotocol.getCommand()で実行する．
+%また，protocol.py内には，getCommand関数があり，cowrie/src/cowrie/commandsの下にある.pyファイルの中から対応する攻撃コマンドの.pyファイルが実行される．
+
 調査の結果，Dshieldは
 攻撃コマンドを取集し，
-/srv/cowrie/var/log/cowrieの場所に保存
+/srv/cowrie/var/log/cowrieの場所にファイル名がcowrie.logやcowrie.jsonに日付が加わった形で保存
 していることが分かった．
 また，ログイン試行に対応しているプログラムが
 /src/cowrie/core/の場所にあるauth.pyである
@@ -197,6 +201,10 @@ Dshieldは外部からの攻撃者
 
 %\subsection{収集したコマンド内容と攻撃者の意図}
 実際にハニーポットを運用し5/19から5/30の期間中にコマンドを取集した．
+そして，収集したコマンドのファイルデータを扱いやすく，分かりやすくするためのプログラムを作成した．
+初めに，コマンド引数でした指定した一つのjsonファイルから一行ずつJsonデータを辞書形式に変更するプログラムとしてread Json.pyを作成した．また，攻撃者が変わった際に分かりやすいように，ipアドレスが変わったらその都度表示するようにした．
+次に複数日のjsonファイルを一括で処理するプログラムをshellスクリプトで作成した．作成したプログラムforList.shは，コマンドで指定したファイル(foo)に書かれているファイルを対象にreadJson.pyを実行する．
+
 収集したコマンドの中には
 特定のパターンのコマンドが多く発見された．
 例えば組み込みLinuxで複数のコマンドをまとめるために使われる
@@ -218,7 +226,15 @@ busyBoxが含まれていて，
 (1)について，
 Dshieldでの攻撃コマンドを模倣している部分を調査し，
 srv/cowrie/src/cowrie/commandsの下にPythonプログラムとして実現されていることが分かった．
-例えば，不正ファイルデータのダウンロードに使われているwgetの動作は，wget.py中で行われる．主なそのファイル内の動作プログラムとして，123行目の
+例えば，不正ファイルデータのダウンロードに使われているwgetの動作は，wget.py中で行われる．
+
+\begin{figure}[htbp]
+
+\lstinputlisting[firstnumber=123]{List/wgetP01.py}
+
+\end{figure}
+
+主なそのファイル内の動作プログラムとして，123行目の
 \verb!self.deferred = self.download(self.url, self.outfile)!で不正サイト情報であるdefeerredを，引数としてURLとoutファイルでdownload関数によって取得する.124から128行内の
 \verb! if self.deferred:!のif文で不正サイト情報が得られたら\verb!self.deferredaddCallback(self.success)!successメソッドへ移動し，上手く得られなかったら\verb!self.deferred.addErrback(self.error, self.url)!でerrorメソッドへ行く．そして，successメソッド内で(2)と(3)の処理を行うコードを追加した．
 
@@ -265,11 +281,11 @@ open関数でファイルを作成する．\verb!self.file = open(fname, "wb")!�
 %よって，ELF形式のファイル構造を調査する．
 
 \section{ELF形式のファイルから情報取得の自動化}
-ELF形式のファイルについて，自動で情報を解析するためのプログラムを作成した．ELF形式は図２に示すように,実行時にメモリ上に展開される.text，.rodataなどの複数セクションで構成されている．セクションは，ELFヘッダ，プログラムヘッダテーブル，セクションヘッダテールの3種類あり，ELFヘッダでは，プログラムヘッダテーブルとセクションヘッダテーブルのサイズやオフセットの情報が取得できる．また，プログラムヘッダテーブルでの情報で，読み出し可能なデータのセグメントに分けられている．各セクションの境界はセクションヘッダテーブルの情報で切り分けられる．
+ELF形式のファイルについて，自動で情報を解析するためのプログラムを作成した．ELF形式は図\ref{fig:elf}に示すように,実行時にメモリ上に展開される.text，.rodataなどの複数セクションで構成されている．セクションは，ELFヘッダ，プログラムヘッダテーブル，セクションヘッダテールの3種類あり，ELFヘッダでは，プログラムヘッダテーブルとセクションヘッダテーブルのサイズやオフセットの情報が取得できる．また，プログラムヘッダテーブルでの情報で，読み出し可能なデータのセグメントに分けられている．各セクションの境界はセクションヘッダテーブルの情報で切り分けられる．
 \begin{figure}[htbp]
 	\centering
- 	\includegraphics[width=\linewidth]{elf.png}
- 	\caption{ELF形式のファイル構造}\label{fig:system}
+ 	\includegraphics[width=0.5\linewidth]{elf.png}
+ 	\caption{ELF形式のファイル構造}\label{fig:elf}
 \end{figure}
 
 自動情報取得として，プログラムに埋め込まれた文字列などのリテラルが格納されている.rodataから情報を取得する処理を実装した．ELF形式では各セクションが記録される順番は規定されていないが，各セクションの名前のテーブルが格納されたセクション(.shstrtab)からの番号はELFヘッダから取得できる．セクションヘッダテーブルは，エントリという項目で分かれており，各エントリは一つ一つのセクションの情報について書かれている．各エントリ内の一部が.shstrtabセクションのテーブルの番号の情報をもつため，その番号で各エントリがどのセクションかを判断ができる，そこで，.rodataを検索し，対応するセクションの内容をダンプするようにプログラムした．
@@ -298,4 +314,9 @@ ELF形式のファイルについて，自動で情報を解析するための�
 \bibliographystyle{ipsjunsrt}
 \bibliography{sample}
 
+\appendix
+
+\chapter{プログラムリスト}
+
+\lstinputlisting{List/wget.py}
 \end{document}
