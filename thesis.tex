@@ -247,9 +247,9 @@ forLsit.shを図\ref{fig:forList.sh}に，fooファイルを図\ref{fig:foo}に�
 \end{figure}
 
 収集したコマンドの中には,
-特定のパターンのコマンドが多く発見された．
+特定のコマンドが多く発見された．
 例えば組み込みLinuxで複数のコマンドをまとめるために使われる
-busyBoxが図\ref{fig:busybox}のように含まれていて，busyboxと英文字ランダムな5桁がかなり多かった．
+busyBoxが図\ref{fig:busybox}のように含まれていて，busyBoxの後にオプションだと思われる5桁のランダムな英字が続くものが含まれた攻撃コマンドは，コマンドの中でも特に多かった．そのため，
 この期間中に多くの攻撃が組み込みLinuxの機器を対象としていることが分かった．
 
 \begin{figure}[htbp]
@@ -259,9 +259,34 @@ busyBoxが図\ref{fig:busybox}のように含まれていて，busyboxと英文�
 	\caption{busyboxの攻撃コマンド}\label{fig:busybox}
 	
 \end{figure}
+また，色々なipアドレスから同じパターンで送られてくる攻撃コマンド図\ref{fig:commandpattern}が多く見られた．
+この攻撃コマンドの内容から考える攻撃者の意図は，初めにenableやsystemコマンドで，管理者権限を上げ，より重要なコマンドを使用可能にする．
+次に，shellやshでシェルを起動し，コマンド入力で操作できる環境を作る．というように，同じ内容の攻撃コマンドを複数試し，成功するかどうかで，接続先がどのようなOSかなどの情報を絞り込んでゆく．
+そして，catコマンドを用いて実行中のファイル情報やOS情報を持つproc/mountのファイルの中身を確認する．
+このパターンの攻撃コマンドは，busyboxの後の英文字がランダムで他の部分は変わらない．
+\verb!cd /dev/shm;cat .s!で，データを共有するファイルに移動し，.sファイルの中身を見る．前の動作のコマンドが失敗したら\verb!cp /bin/echo .s!で，/bin/echoの下の.sのファイルをコピーする．
+tftpでファイルの転送，wgetでファイルのダウンロードを行う
+．次に\verb!dd bs=52 count=1 if=.s!は，ddでデータを変換コピーする．
+bs=52は，ファイル入力時のブロックサイズを52とし，count=1は，
+コピーするブロックサイズを1とする，もしくは，\verb!cat .s!で，
+.sファイルをの中身を見る．
+もしくは，\verb!while read i;!で1行ずつ読み込んで，
+\verb!do echo \$i;!で1行ずつechoで表示をし，
+\verb!done < .s!で.sファイルを読み込む．
+この３つ全てが.sファイルを見る動作で，色々な方法を試し，
+どれか成功すればよいとゆう攻撃者の考えが見られる．
+最後に\verb!rm .s;exit!で.sファイルを排除し，exitで抜ける．
 
-また，収集したコマンド中には，不正なファイルをダウンロードさせるためwgetコマンドを用いているもの図\ref{fig:wget}や，
-不正なファイルをハニーポット内に作成するために，echoコマンドを用いているもの図\ref{fig:echo}が多かった．
+\begin{figure}[htbp]
+
+	\centering
+ 	\includegraphics[scale=0.7]{commandpattern.png}
+	\caption{多くみられた攻撃コマンドのパターン}\label{fig:commandpattern}
+	
+\end{figure}
+
+収集したコマンド中には，不正なファイルをダウンロードさせるためwgetコマンドを用いているもの図\ref{fig:wget}や，
+不正なファイルをハニーポット内に作成するために，echoコマンドを用いている攻撃コマンド図\ref{fig:echo}が多かった．
 \begin{figure}[htbp]
 
 	\centering
