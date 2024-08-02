@@ -1,0 +1,2 @@
+#! /bin/sh
+detex -lr -e "figure,table,bibliographystyle,array,eqnarray,equation,longtable,picture,tabular,verbatim," $*.tex | grep -v "^$" | grep -v "ipsjunsrt" | wc -m
